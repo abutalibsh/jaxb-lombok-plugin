@@ -38,7 +38,7 @@ public class LombokPlugin extends Plugin  {
             public void editGeneratedClass(JDefinedClass generatedClass) {
                 generatedClass.annotate(NoArgsConstructor.class);
                 generatedClass.annotate(AllArgsConstructor.class);
-                generatedClass.annotate(Builder.class).param("builderMethodName", "builderFor" + generatedClass.name());
+                generatedClass.annotate(Builder.class);
             }
         });
 
@@ -48,7 +48,15 @@ public class LombokPlugin extends Plugin  {
                 removeGeneratedSourceSetters(generatedClass);
             }
         });
-    }
+        
+        addCommand(new Command("removeGeneratedSourceGetters", "remove Getters from JAXB generated sources") {
+            @Override
+            public void editGeneratedClass(JDefinedClass generatedClass) {
+                removeGeneratedSourceGetters(generatedClass);
+            }
+        });
+    }    
+    
 
     private void addLombokCommand(String name, Class ... lombokAnnotation) {
         addCommand(new LombokCommand(name, lombokAnnotation));
@@ -116,6 +124,22 @@ public class LombokPlugin extends Plugin  {
         // find methods to remove
         for (JMethod method : generatedClass.methods()) {
             if (method.name().startsWith("set")) {
+                // TODO check return type void?
+                setters.add(method);
+            }
+        }
+
+        // remove methods
+        for (JMethod method : setters) {
+            generatedClass.methods().remove(method);
+        }
+    }
+    
+    private void removeGeneratedSourceGetters(JDefinedClass generatedClass) {
+        List<JMethod> setters = new ArrayList<>();
+        // find methods to remove
+        for (JMethod method : generatedClass.methods()) {
+            if (method.name().startsWith("get")) {
                 // TODO check return type void?
                 setters.add(method);
             }
